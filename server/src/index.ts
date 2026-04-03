@@ -30,12 +30,20 @@ app.use('/api/conversion', conversionRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-// Seed admin user on first run
+// Seed admin user on first run or fix if corrupted
 const seedAdmin = async () => {
-  const exists = await User.findOne({ username: 'admin' });
-  if (!exists) {
+  const admin = await User.findOne({ username: 'admin' });
+  if (!admin) {
     await User.create({ username: 'admin', password: 'admin123' });
-    console.log('👤 Admin user seeded (admin / admin123)');
+    console.log('👤 Admin user created (admin / admin123)');
+  } else {
+    // Check if the current password is valid (it might be plain text from an old run)
+    const isValid = await admin.comparePassword('admin123');
+    if (!isValid) {
+      admin.password = 'admin123'; // This will trigger the pre-save hook and hash it correctly
+      await admin.save();
+      console.log('👤 Admin password reset and hashed (admin / admin123)');
+    }
   }
 };
 

@@ -1,0 +1,20 @@
+{
+  "name": "billing-software-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "server",
+    "mobile-app"
+  ],
+  "scripts": {
+    "install-server": "npm install -w server",
+    "install-mobile": "npm install -w mobile-app",
+    "build-server": "npm run build -w server",
+    "build-mobile": "npm run build -w mobile-app",
+    "dev-server": "npm run dev -w server",
+    "dev-mobile": "npm run dev -w mobile-app",
+    "dev": "npm run dev-server & npm run dev-mobile",
+    "start-server": "npm start -w server",
+    "start-mobile": "npm run dev -w mobile-app"
+  }
+}
