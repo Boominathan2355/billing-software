@@ -1,5 +1,1 @@
-{
-  "version": 2,
-  "buildCommand": "npm run build-mobile",
-  "outputDirectory": "mobile-app/dist"
-}
+{\n  "buildCommand": "npm run build-mobile",\n  "outputDirectory": "mobile-app/dist"\n}
