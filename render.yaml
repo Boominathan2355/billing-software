@@ -1,0 +1,62 @@
+services:
+  # --- PRODUCTION ENVIRONMENT ---
+  - type: web
+    name: billing-server-prod
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URI
+        sync: false # Set in Render Dashboard (Prod DB)
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false # Set in Render Dashboard
+
+  - type: web
+    name: billing-client-prod
+    runtime: static
+    rootDir: mobile-app
+    buildCommand: npm install && npm run build
+    staticPublishDir: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://billing-server-prod.onrender.com/api
+
+  # --- STAGING ENVIRONMENT ---
+  - type: web
+    name: billing-server-staging
+    runtime: node
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: MONGO_URI
+        sync: false # Set in Render Dashboard (Staging DB)
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: development
+      - key: JWT_SECRET
+        sync: false # Set in Render Dashboard
+
+  - type: web
+    name: billing-client-staging
+    runtime: static
+    rootDir: mobile-app
+    buildCommand: npm install && npm run build
+    staticPublishDir: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://billing-server-staging.onrender.com/api
