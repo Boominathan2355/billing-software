@@ -14,7 +14,7 @@ export interface IBill extends Document {
   customerId?: Types.ObjectId;
   customerName?: string; // Ad-hoc walk-in
   customerPhone?: string; // Ad-hoc walk-in
-  paymentType: 'CASH' | 'UDHAAR';
+  paymentType: 'CASH' | 'UDHAAR' | 'ONLINE';
   items: IBillItem[];
   subTotal: number;
   taxAmount: number;
@@ -34,7 +34,7 @@ const BillSchema = new Schema<IBill>({
   customerId: { type: Schema.Types.ObjectId, ref: 'Customer' },
   customerName: { type: String },
   customerPhone: { type: String },
-  paymentType: { type: String, enum: ['CASH', 'UDHAAR'], required: true },
+  paymentType: { type: String, enum: ['CASH', 'UDHAAR', 'ONLINE'], required: true },
   items: [{
     productId: { type: Schema.Types.ObjectId, ref: 'Product' },
     versionId: { type: Schema.Types.ObjectId, ref: 'Version' }, // legacy
