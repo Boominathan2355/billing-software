@@ -1,20 +1,26 @@
 {
-  "name": "billing-software-root",
+  "name": "billing-software",
   "version": "1.0.0",
+  "description": "Full-stack Billing & Inventory Management System",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "workspaces": [
     "server",
     "mobile-app"
   ],
   "scripts": {
-    "install-server": "npm install -w server",
-    "install-mobile": "npm install -w mobile-app",
-    "build-server": "npm run build -w server",
-    "build-mobile": "npm run build -w mobile-app",
+    "dev": "concurrently \"npm run dev-server\" \"npm run dev-mobile\"",
     "dev-server": "npm run dev -w server",
     "dev-mobile": "npm run dev -w mobile-app",
-    "dev": "npm run dev-server & npm run dev-mobile",
+    "build": "npm run build-server && npm run build-mobile",
+    "build-server": "npm run build -w server",
+    "build-mobile": "npm run build -w mobile-app",
     "start-server": "npm start -w server",
-    "start-mobile": "npm run dev -w mobile-app"
+    "install:all": "npm install && npm install-server && npm install-mobile"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }
