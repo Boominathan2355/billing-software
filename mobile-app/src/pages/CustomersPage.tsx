@@ -5,6 +5,7 @@ import api from '../api/client';
 import type { Customer } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
+import { SkeletonCardList } from '../components/Skeleton';
 
 export default function CustomersPage() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export default function CustomersPage() {
           </button>
         </div>
 
-        {loading && <div className="spinner" />}
+        {loading && <SkeletonCardList count={5} />}
 
         {customers.map(c => (
           <div key={c._id} className="card" style={{ marginBottom: 10, cursor: 'pointer' }}

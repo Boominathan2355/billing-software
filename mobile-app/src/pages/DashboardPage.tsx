@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { DashboardMetrics } from '../types';
 import api from '../api/client';
 import BottomNav from '../components/BottomNav';
+import { SkeletonDashboard } from '../components/Skeleton';
 import { LuActivity, LuTriangleAlert, LuTrendingUp, LuIndianRupee, LuClock } from 'react-icons/lu';
 import { format } from 'date-fns';
 
@@ -27,7 +28,17 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="spinner" style={{ marginTop: 80 }} />;
+    return (
+      <div>
+        <div className="page-content">
+          <div className="page-header">
+            <h1 className="page-title">Dashboard</h1>
+          </div>
+          <SkeletonDashboard />
+        </div>
+        <BottomNav />
+      </div>
+    );
   }
 
   if (!metrics) {

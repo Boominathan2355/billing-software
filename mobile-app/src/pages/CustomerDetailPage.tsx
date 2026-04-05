@@ -4,6 +4,7 @@ import { LuArrowLeft, LuPencil, LuTrash2, LuMail, LuMapPin } from 'react-icons/l
 import api from '../api/client';
 import type { Customer, Transaction } from '../types';
 import Modal from '../components/Modal';
+import { SkeletonCustomerDetail } from '../components/Skeleton';
 
 export default function CustomerDetailPage() {
   const { id }  = useParams<{ id: string }>();
@@ -63,7 +64,7 @@ export default function CustomerDetailPage() {
     navigate('/customers');
   };
 
-  if (loading) return <div className="spinner" style={{ marginTop: 80 }} />;
+  if (loading) return <SkeletonCustomerDetail />;
   if (!customer) return <div className="empty">Customer not found</div>;
 
   const isDebt = customer.balance < 0;

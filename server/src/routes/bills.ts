@@ -1,7 +1,6 @@
 import { Router, Response } from 'express';
 import { auth } from '../middleware/auth';
 import Product from '../models/Product';
-import Version from '../models/Version';
 import Customer from '../models/Customer';
 import Transaction from '../models/Transaction';
 import Bill from '../models/Bill';
@@ -25,39 +24,33 @@ router.get('/', auth, async (req: any, res: Response) => {
 // POST /api/bills
 router.post('/', auth, async (req, res: Response) => {
   try {
-    const { items, customerId, customerName, customerPhone, paymentType, discount, status = 'COMPLETED', draftId } = req.body;
+    const { items, customerId, customerName, customerPhone, paymentType, discount, gstRate = 0, status = 'COMPLETED', draftId } = req.body;
     let subTotal = 0;
-    let totalTax = 0;
     const populatedItems = [];
 
     for (const item of items) {
       const p = await Product.findById(item.productId);
-      if (!p) throw new Error('Product not found');
+      if (!p) throw new Error(`Product not found`);
 
       if (status === 'COMPLETED') {
-        if (p.freeStock < item.qty) {
-          throw new Error(`Insufficient stock for ${p.name}`);
-        }
+        if (p.freeStock < item.qty) throw new Error(`Insufficient stock for ${p.name}`);
         p.freeStock -= item.qty;
         await p.save();
       }
 
-      const sellingPrice = item.price ?? p.price;
-      const itemTotal = sellingPrice * item.qty;
-      const taxRate = p.taxRate || 0;
-      const itemTax = itemTotal * (taxRate / 100);
-
-      subTotal += itemTotal;
-      totalTax += itemTax;
+      const sellingPrice = item.price ?? p.price ?? 0;
+      subTotal += sellingPrice * item.qty;
 
       populatedItems.push({
-        productId: p._id,
+        productId:   p._id,
         productName: p.name,
-        qty: item.qty,
-        price: sellingPrice,
-        taxAmount: itemTax,
+        qty:         item.qty,
+        price:       sellingPrice,
+        taxAmount:   0, // tax computed at bill level via gstRate
       });
     }
+
+    const totalTax = subTotal * (Number(gstRate) / 100);
 
     let discountAmount = 0;
     if (discount) {
@@ -133,24 +126,12 @@ router.post('/:id/cancel', auth, async (req, res: Response) => {
     if (!bill) return res.status(404).json({ error: 'Bill not found' });
     if (bill.cancelled) return res.status(400).json({ error: 'Bill already cancelled' });
 
-    // Restore stock — handle both new (productId) and legacy (versionId) bills
+    // Restore stock for all bill items
     for (const item of bill.items) {
-      if ((item as any).productId) {
-        const p = await Product.findById((item as any).productId);
-        if (p) {
-          p.freeStock += item.qty;
-          await p.save();
-        }
-      } else if (item.versionId) {
-        const v = await Version.findById(item.versionId);
-        if (v) {
-          const qtyToRestore = item.qty * v.multiplier;
-          const p = await Product.findById(v.productId);
-          if (p) {
-            p.freeStock += qtyToRestore;
-            await p.save();
-          }
-        }
+      const productId = (item as any).productId;
+      if (productId) {
+        const p = await Product.findById(productId);
+        if (p) { p.freeStock += item.qty; await p.save(); }
       }
     }
 

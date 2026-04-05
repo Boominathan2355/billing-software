@@ -5,6 +5,7 @@ import api from '../api/client';
 import type { Transaction } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
+import { SkeletonBooks } from '../components/Skeleton';
 
 const CATEGORIES = ['Sale', 'Expense', 'Rent', 'Purchase', 'Salary', 'Other'];
 
@@ -62,7 +63,7 @@ export default function BooksPage() {
           </div>
         </div>
 
-        {loading && <div className="spinner" />}
+        {loading && <SkeletonBooks />}
 
         <div className="card">
           {transactions.length === 0 && !loading && (

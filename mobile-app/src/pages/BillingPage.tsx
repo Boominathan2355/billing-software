@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { LuPlus, LuTrash2, LuCircleCheck, LuCircleX, LuSave, LuFolderOpen, LuCoins, LuNotebook } from 'react-icons/lu';
+import { LuPlus, LuTrash2, LuCircleCheck, LuCircleX, LuSave, LuFolderOpen, LuCoins, LuNotebook, LuQrCode } from 'react-icons/lu';
 import api from '../api/client';
 import type { Customer, Product, BillItem } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
+import { effectiveGSTRate, getQRImage } from '../utils/settings';
 
 export default function BillingPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -15,7 +16,7 @@ export default function BillingPage() {
 
   const [selectedProduct, setSelectedProduct]     = useState('');
   const [qty, setQty]                             = useState('');
-  const [paymentType, setPaymentType]             = useState<'CASH' | 'UDHAAR'>('CASH');
+  const [paymentType, setPaymentType]             = useState<'CASH' | 'UDHAAR' | 'ONLINE'>('CASH');
 
   const [discountType, setDiscountType]           = useState<'FLAT' | 'PERCENTAGE'>('FLAT');
   const [discountValue, setDiscountValue]         = useState('');
@@ -41,18 +42,22 @@ export default function BillingPage() {
   const addItem = () => {
     const prod = products.find(p => p._id === selectedProduct);
     if (!prod || !qty) return;
+    const unitPrice = prod.price ?? 0;
+    const qtyNum    = parseFloat(qty);
+    const gstRate   = effectiveGSTRate();
     setBill(prev => [...prev, {
-      productId: prod._id,
+      productId:   prod._id,
       productName: prod.name,
-      qty: parseFloat(qty),
-      price: prod.price,
-      taxAmount: parseFloat(qty) * prod.price * (prod.taxRate || 0) / 100,
+      qty:         qtyNum,
+      price:       unitPrice,
+      taxAmount:   qtyNum * unitPrice * gstRate / 100,
     }]);
     setQty('');
   };
 
-  const subTotal = bill.reduce((s, i) => s + i.qty * i.price, 0);
-  const totalTax = bill.reduce((s, i) => s + (i.taxAmount || 0), 0);
+  const gstRate = effectiveGSTRate();
+  const subTotal = bill.reduce((s, i) => s + i.qty * (i.price ?? 0), 0);
+  const totalTax = gstRate > 0 ? subTotal * gstRate / 100 : 0;
   const dVal = parseFloat(discountValue) || 0;
   const discountAmount = discountType === 'FLAT' ? dVal : subTotal * (dVal / 100);
   const total = Math.max(0, subTotal + totalTax - discountAmount);
@@ -64,7 +69,8 @@ export default function BillingPage() {
     const payload: any = {
       customerId: selectedCustomer || null,
       paymentType,
-      items: bill.map(i => ({ productId: i.productId, qty: i.qty, price: i.price })),
+      items: bill.map(i => ({ productId: i.productId, qty: i.qty, price: i.price ?? 0 })),
+      gstRate: effectiveGSTRate(),
       status,
     };
     if (!selectedCustomer) {
@@ -344,19 +350,35 @@ export default function BillingPage() {
           <div className="card" style={{ marginBottom: 24 }}>
             <label className="label">Payment Type</label>
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-              {(['CASH', 'UDHAAR'] as const).map(t => (
+              {(['CASH', 'UDHAAR', 'ONLINE'] as const).map(t => (
                 <button
                   key={t}
                   className={`btn ${paymentType === t ? 'btn-primary' : 'btn-ghost'}`}
-                  style={{ flex: 1, fontSize: 14 }}
+                  style={{ flex: 1, fontSize: 13 }}
                   onClick={() => setPaymentType(t)}
                 >
-                  {t === 'CASH'
-                    ? <><LuCoins size={17} /> Cash</>
-                    : <><LuNotebook size={17} /> Udhaar</>}
+                  {t === 'CASH'   && <><LuCoins size={16} /> Cash</>}
+                  {t === 'UDHAAR' && <><LuNotebook size={16} /> Udhaar</>}
+                  {t === 'ONLINE' && <><LuQrCode size={16} /> Online</>}
                 </button>
               ))}
             </div>
+
+            {/* QR code panel for Online payment */}
+            {paymentType === 'ONLINE' && (() => {
+              const qr = getQRImage();
+              return qr ? (
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>Scan to Pay</div>
+                  <img src={qr} alt="Payment QR" style={{ width: 160, height: 160, objectFit: 'contain', borderRadius: 14, border: '1px solid var(--border)', background: '#fff', padding: 6 }} />
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '14px 0', marginBottom: 16, color: 'var(--text-muted)', fontSize: 13 }}>
+                  No QR set — upload one in Settings
+                </div>
+              );
+            })()}
+
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => saveBill('DRAFT')} disabled={saving} style={{ flex: 1, fontSize: 16 }}>
                 <LuSave size={18} /> Draft

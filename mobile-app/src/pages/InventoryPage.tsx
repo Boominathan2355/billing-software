@@ -4,10 +4,12 @@ import api from '../api/client';
 import type { Product } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
+import { SkeletonBlock } from '../components/Skeleton';
 
 export default function InventoryPage() {
   const [products, setProducts]     = useState<Product[]>([]);
   const [loading, setLoading]       = useState(true);
+  const [opError, setOpError]       = useState('');
   const [showAdd, setShowAdd]       = useState(false);
   const [showEdit, setShowEdit]     = useState(false);
   const [editId, setEditId]         = useState('');
@@ -16,17 +18,15 @@ export default function InventoryPage() {
   const [pName, setPName]               = useState('');
   const [pUnit, setPUnit]               = useState('');
   const [pStock, setPStock]             = useState('');
-  const [pPrice, setPPrice]             = useState('');
+  const [pPrice, setPPrice]               = useState('');
   const [pPurchasePrice, setPPurchasePrice] = useState('');
-  const [pTax, setPTax]                 = useState('');
 
   // Edit form
   const [epName, setEpName]               = useState('');
   const [epUnit, setEpUnit]               = useState('');
   const [epStock, setEpStock]             = useState('');
-  const [epPrice, setEpPrice]             = useState('');
+  const [epPrice, setEpPrice]               = useState('');
   const [epPurchasePrice, setEpPurchasePrice] = useState('');
-  const [epTax, setEpTax]                 = useState('');
 
   const load = () => api.get('/products').then(r => { setProducts(r.data); setLoading(false); });
   useEffect(() => { load(); }, []);
@@ -39,9 +39,8 @@ export default function InventoryPage() {
       freeStock: parseFloat(pStock) || 0,
       price: parseFloat(pPrice) || 0,
       purchasePrice: parseFloat(pPurchasePrice) || 0,
-      taxRate: parseFloat(pTax) || 0,
     });
-    setPName(''); setPUnit(''); setPStock(''); setPPrice(''); setPPurchasePrice(''); setPTax('');
+    setPName(''); setPUnit(''); setPStock(''); setPPrice(''); setPPurchasePrice('');
     setShowAdd(false);
     load();
   };
@@ -53,28 +52,36 @@ export default function InventoryPage() {
     setEpStock(p.freeStock.toString());
     setEpPrice((p.price ?? 0).toString());
     setEpPurchasePrice((p.purchasePrice ?? 0).toString());
-    setEpTax((p.taxRate || 0).toString());
     setShowEdit(true);
   };
 
   const editProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.put(`/products/${editId}`, {
-      name: epName,
-      unitName: epUnit,
-      freeStock: parseFloat(epStock) || 0,
-      price: parseFloat(epPrice) || 0,
-      purchasePrice: parseFloat(epPurchasePrice) || 0,
-      taxRate: parseFloat(epTax) || 0,
-    });
-    setShowEdit(false);
-    load();
+    setOpError('');
+    try {
+      await api.put(`/products/${editId}`, {
+        name: epName,
+        unitName: epUnit,
+        freeStock: parseFloat(epStock) || 0,
+        price: parseFloat(epPrice) || 0,
+        purchasePrice: parseFloat(epPurchasePrice) || 0,
+      });
+      setShowEdit(false);
+      load();
+    } catch (err: any) {
+      setOpError(err.response?.data?.error || 'Failed to update product');
+    }
   };
 
   const deleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    await api.delete(`/products/${id}`);
-    load();
+    setOpError('');
+    try {
+      await api.delete(`/products/${id}`);
+      load();
+    } catch (err: any) {
+      setOpError(err.response?.data?.error || 'Failed to delete product. It may have bills linked to it.');
+    }
   };
 
   const margin = (p: Product) => {
@@ -95,7 +102,29 @@ export default function InventoryPage() {
           </button>
         </div>
 
-        {loading && <div className="spinner" />}
+        {opError && (
+          <div className="error-box" style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>{opError}</span>
+            <button onClick={() => setOpError('')} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
+          </div>
+        )}
+
+        {loading && (
+          <>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="card" style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <SkeletonBlock w="50%" h={17} />
+                  <SkeletonBlock w={44} h={44} radius={12} />
+                </div>
+                <div style={{ display: 'flex', gap: 16, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                  <SkeletonBlock w={80} h={36} radius={10} />
+                  <SkeletonBlock w={80} h={36} radius={10} />
+                </div>
+              </div>
+            ))}
+          </>
+        )}
 
         {products.map(p => (
           <div key={p._id} className="card" style={{ marginBottom: 12 }}>
@@ -185,10 +214,6 @@ export default function InventoryPage() {
                 <input className="input" type="number" step="0.01" value={pPurchasePrice} onChange={e => setPPurchasePrice(e.target.value)} placeholder="0.00" />
               </div>
             </div>
-            <div>
-              <label className="label">GST Rate (%)</label>
-              <input className="input" type="number" step="0.1" value={pTax} onChange={e => setPTax(e.target.value)} placeholder="0" />
-            </div>
             <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 4 }}>Save Product</button>
           </form>
         </Modal>
@@ -219,10 +244,6 @@ export default function InventoryPage() {
                 <label className="label">Purchase Price (₹)</label>
                 <input className="input" type="number" step="0.01" value={epPurchasePrice} onChange={e => setEpPurchasePrice(e.target.value)} placeholder="0.00" />
               </div>
-            </div>
-            <div>
-              <label className="label">GST Rate (%)</label>
-              <input className="input" type="number" step="0.1" value={epTax} onChange={e => setEpTax(e.target.value)} placeholder="0" />
             </div>
             <button type="submit" className="btn btn-primary btn-full">Save Changes</button>
           </form>
