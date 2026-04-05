@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "comment": "Force redeploy to apply rootDirectory",
   "rootDirectory": "mobile-app",
   "framework": "vite",
   "headers": [
