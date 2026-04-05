@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm run build-mobile",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build -w mobile-app",
   "outputDirectory": "mobile-app/dist",
   "framework": "vite",
   "headers": [
