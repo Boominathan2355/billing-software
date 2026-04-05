@@ -17,12 +17,13 @@ services:
       - key: JWT_SECRET
         sync: false
 
-  - type: static
+  - type: web
     name: billing-client-feature
+    runtime: static
     branch: feature/billing
     rootDir: mobile-app
     buildCommand: npm install && npm run build
-    staticPublishDir: dist
+    staticPublishPath: dist
     routes:
       - type: rewrite
         source: /*
