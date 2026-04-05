@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build-mobile",
+  "buildCommand": "npm run build",
   "outputDirectory": "mobile-app/dist",
   "rewrites": [
     {
