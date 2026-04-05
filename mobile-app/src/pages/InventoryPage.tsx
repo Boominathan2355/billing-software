@@ -69,7 +69,7 @@ export default function InventoryPage() {
       setShowEdit(false);
       load();
     } catch (err: any) {
-      setOpError(err.response?.data?.error || 'Failed to update product');
+      setOpError(err.message || 'Failed to update product');
     }
   };
 
@@ -80,7 +80,7 @@ export default function InventoryPage() {
       await api.delete(`/products/${id}`);
       load();
     } catch (err: any) {
-      setOpError(err.response?.data?.error || 'Failed to delete product. It may have bills linked to it.');
+      setOpError(err.message || 'Failed to delete product. It may have bills linked to it.');
     }
   };
 
