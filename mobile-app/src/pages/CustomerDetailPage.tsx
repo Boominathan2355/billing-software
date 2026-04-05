@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit2, Trash2 } from 'lucide-react';
+import { LuArrowLeft, LuPencil, LuTrash2, LuMail, LuMapPin } from 'react-icons/lu';
 import api from '../api/client';
 import type { Customer, Transaction } from '../types';
 import Modal from '../components/Modal';
@@ -17,8 +17,10 @@ export default function CustomerDetailPage() {
 
   // Edit states
   const [showEdit, setShowEdit] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editPhone, setEditPhone] = useState('');
+  const [editName, setEditName]         = useState('');
+  const [editPhone, setEditPhone]       = useState('');
+  const [editEmail, setEditEmail]       = useState('');
+  const [editAddress, setEditAddress]   = useState('');
 
   const load = () =>
     api.get(`/customers/${id}`).then(r => {
@@ -41,7 +43,11 @@ export default function CustomerDetailPage() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await api.put(`/customers/${id}`, { name: editName, phone: editPhone });
+    await api.put(`/customers/${id}`, {
+      name: editName, phone: editPhone,
+      email: editEmail || undefined,
+      address: editAddress || undefined,
+    });
     setSaving(false);
     setShowEdit(false);
     load();
@@ -65,7 +71,7 @@ export default function CustomerDetailPage() {
   return (
     <div style={{ height: '100dvh', overflowY: 'auto', padding: '20px 16px 32px' }}>
       <button className="back-btn" onClick={() => navigate('/customers')}>
-        <ArrowLeft size={18} /> Back
+        <LuArrowLeft size={18} /> Back
       </button>
 
       {/* Customer hero */}
@@ -81,14 +87,31 @@ export default function CustomerDetailPage() {
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 24, fontWeight: 900 }}>{customer.name}</h1>
           <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>{customer.phone}</div>
+          {customer.email && (
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
+              <LuMail size={12} /> {customer.email}
+            </div>
+          )}
+          {customer.address && (
+            <div style={{ color: 'var(--text-muted)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
+              <LuMapPin size={12} /> {customer.address}
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button style={{ color: '#3b82f6', background: 'none', border: 'none', padding: 4 }} onClick={() => { setEditName(customer.name); setEditPhone(customer.phone); setShowEdit(true); }}>
-            <Edit2 size={20} />
+          <button style={{ color: '#3b82f6', background: 'none', border: 'none', padding: 4 }}
+            onClick={() => {
+              setEditName(customer.name);
+              setEditPhone(customer.phone);
+              setEditEmail(customer.email || '');
+              setEditAddress(customer.address || '');
+              setShowEdit(true);
+            }}>
+            <LuPencil size={20} />
           </button>
           {history.length === 0 && (
             <button style={{ color: '#ef4444', background: 'none', border: 'none', padding: 4 }} onClick={handleDelete}>
-              <Trash2 size={20} />
+              <LuTrash2 size={20} />
             </button>
           )}
         </div>
@@ -154,10 +177,24 @@ export default function CustomerDetailPage() {
 
       {showEdit && (
         <Modal onClose={() => setShowEdit(false)} title="Edit Customer">
-          <form onSubmit={handleEdit}>
-            <input className="input" style={{ marginBottom: 16 }} required value={editName} onChange={e => setEditName(e.target.value)} placeholder="Name" />
-            <input className="input" style={{ marginBottom: 24 }} value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Phone" />
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={saving}>
+          <form onSubmit={handleEdit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label className="label">Name</label>
+              <input className="input" required value={editName} onChange={e => setEditName(e.target.value)} placeholder="Full name" />
+            </div>
+            <div>
+              <label className="label">Phone</label>
+              <input className="input" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Phone" />
+            </div>
+            <div>
+              <label className="label">Email <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <input className="input" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} placeholder="email@example.com" />
+            </div>
+            <div>
+              <label className="label">Address <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <textarea className="input" value={editAddress} onChange={e => setEditAddress(e.target.value)} placeholder="Street, City..." rows={2} style={{ resize: 'none' }} />
+            </div>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 4 }} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </form>

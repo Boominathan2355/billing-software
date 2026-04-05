@@ -2,6 +2,8 @@ export interface Customer {
   _id: string;
   name: string;
   phone: string;
+  email?: string;
+  address?: string;
   balance: number;
 }
 
@@ -11,15 +13,8 @@ export interface Product {
   unitName: string;
   freeStock: number;
   taxRate: number;
-  versions: Version[];
-}
-
-export interface Version {
-  _id: string;
-  productId: string;
-  name: string;
-  multiplier: number;
   price: number;
+  purchasePrice: number;
 }
 
 export interface Transaction {
@@ -33,8 +28,7 @@ export interface Transaction {
 }
 
 export interface BillItem {
-  versionId: string;
-  versionName?: string;
+  productId: string;
   productName?: string;
   qty: number;
   price: number;

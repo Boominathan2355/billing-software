@@ -30,37 +30,32 @@ router.post('/', auth, async (req, res: Response) => {
     let totalTax = 0;
     const populatedItems = [];
 
-    // Process items, deduct stock if completed
     for (const item of items) {
-      const v = await Version.findById(item.versionId);
-      if (!v) throw new Error('Version not found');
-      
-      const p = await Product.findById(v.productId);
+      const p = await Product.findById(item.productId);
       if (!p) throw new Error('Product not found');
 
-      const qtyNeeded = item.qty * v.multiplier;
       if (status === 'COMPLETED') {
-        if (p.freeStock < qtyNeeded) {
+        if (p.freeStock < item.qty) {
           throw new Error(`Insufficient stock for ${p.name}`);
         }
-        p.freeStock -= qtyNeeded;
+        p.freeStock -= item.qty;
         await p.save();
       }
 
-      const itemTotal = v.price * item.qty;
+      const sellingPrice = item.price ?? p.price;
+      const itemTotal = sellingPrice * item.qty;
       const taxRate = p.taxRate || 0;
       const itemTax = itemTotal * (taxRate / 100);
-      
+
       subTotal += itemTotal;
       totalTax += itemTax;
 
       populatedItems.push({
-        versionId: item.versionId,
-        productName: item.productName || p.name,
-        versionName: item.versionName || v.name,
+        productId: p._id,
+        productName: p.name,
         qty: item.qty,
-        price: v.price,
-        taxAmount: itemTax
+        price: sellingPrice,
+        taxAmount: itemTax,
       });
     }
 
@@ -69,8 +64,7 @@ router.post('/', auth, async (req, res: Response) => {
       if (discount.type === 'FLAT') discountAmount = discount.value;
       else if (discount.type === 'PERCENTAGE') discountAmount = subTotal * (discount.value / 100);
     }
-    
-    // Prevent negative total
+
     const total = Math.max(0, subTotal + totalTax - discountAmount);
     let txnId;
 
@@ -95,7 +89,6 @@ router.post('/', auth, async (req, res: Response) => {
       }
     }
 
-    // If saving from a draft, delete the old draft
     if (draftId) {
       await Bill.findOneAndDelete({ _id: draftId, status: 'DRAFT' });
     }
@@ -111,12 +104,12 @@ router.post('/', auth, async (req, res: Response) => {
       discount: discount ? { type: discount.type, value: discount.value, amount: discountAmount } : undefined,
       total,
       transactionId: txnId,
-      status
+      status,
     });
 
     res.json(bill);
   } catch (err: any) {
-    console.error("DEBUG BILLS ERROR:", err);
+    console.error('DEBUG BILLS ERROR:', err);
     res.status(400).json({ error: err.message });
   }
 });
@@ -140,25 +133,32 @@ router.post('/:id/cancel', auth, async (req, res: Response) => {
     if (!bill) return res.status(404).json({ error: 'Bill not found' });
     if (bill.cancelled) return res.status(400).json({ error: 'Bill already cancelled' });
 
-    // Restore stock
+    // Restore stock — handle both new (productId) and legacy (versionId) bills
     for (const item of bill.items) {
-      const v = await Version.findById(item.versionId);
-      if (v) {
-        const qtyToRestore = item.qty * v.multiplier;
-        const p = await Product.findById(v.productId);
+      if ((item as any).productId) {
+        const p = await Product.findById((item as any).productId);
         if (p) {
-          p.freeStock += qtyToRestore;
+          p.freeStock += item.qty;
           await p.save();
+        }
+      } else if (item.versionId) {
+        const v = await Version.findById(item.versionId);
+        if (v) {
+          const qtyToRestore = item.qty * v.multiplier;
+          const p = await Product.findById(v.productId);
+          if (p) {
+            p.freeStock += qtyToRestore;
+            await p.save();
+          }
         }
       }
     }
 
-    // Revert ledger & balance
     if (bill.customerId) {
       const customer = await Customer.findById(bill.customerId);
       if (customer) {
         if (bill.paymentType === 'UDHAAR') {
-          customer.balance += bill.total; // Restore balance
+          customer.balance += bill.total;
         }
         await customer.save();
       }

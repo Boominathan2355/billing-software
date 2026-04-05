@@ -1,9 +1,10 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 interface IBillItem {
-  versionId: Types.ObjectId;
+  productId: Types.ObjectId;
+  versionId?: Types.ObjectId;  // legacy
   productName: string;
-  versionName: string;
+  versionName?: string;        // legacy
   qty: number;
   price: number;
   taxAmount?: number;
@@ -35,9 +36,10 @@ const BillSchema = new Schema<IBill>({
   customerPhone: { type: String },
   paymentType: { type: String, enum: ['CASH', 'UDHAAR'], required: true },
   items: [{
-    versionId: { type: Schema.Types.ObjectId, ref: 'Version', required: true },
+    productId: { type: Schema.Types.ObjectId, ref: 'Product' },
+    versionId: { type: Schema.Types.ObjectId, ref: 'Version' }, // legacy
     productName: { type: String, required: true },
-    versionName: { type: String, required: true },
+    versionName: { type: String },
     qty: { type: Number, required: true },
     price: { type: Number, required: true },
     taxAmount: { type: Number, default: 0 },

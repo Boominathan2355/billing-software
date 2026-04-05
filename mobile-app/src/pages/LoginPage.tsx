@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { ShoppingCart } from 'lucide-react';
+import { LuShoppingCart } from 'react-icons/lu';
 
 export default function LoginPage() {
   const { login } = useApp();
@@ -43,7 +43,7 @@ export default function LoginPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 20, boxShadow: '0 0 40px rgba(99,102,241,0.4)',
       }}>
-        <ShoppingCart size={36} color="#fff" />
+        <LuShoppingCart size={36} color="#fff" />
       </div>
 
       <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 4 }}>BillERP</h1>

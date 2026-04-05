@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { LuPlus, LuPencil, LuTrash2, LuTag, LuShoppingBag } from 'react-icons/lu';
 import api from '../api/client';
 import type { Product } from '../types';
 import BottomNav from '../components/BottomNav';
@@ -8,80 +8,80 @@ import Modal from '../components/Modal';
 export default function InventoryPage() {
   const [products, setProducts]     = useState<Product[]>([]);
   const [loading, setLoading]       = useState(true);
-  const [showProd, setShowProd]     = useState(false);
-  const [showVer, setShowVer]       = useState(false);
+  const [showAdd, setShowAdd]       = useState(false);
+  const [showEdit, setShowEdit]     = useState(false);
+  const [editId, setEditId]         = useState('');
 
-  // New product form
-  const [pName, setPName]   = useState('');
-  const [pUnit, setPUnit]   = useState('');
-  const [pStock, setPStock] = useState('');
+  // Add form
+  const [pName, setPName]               = useState('');
+  const [pUnit, setPUnit]               = useState('');
+  const [pStock, setPStock]             = useState('');
+  const [pPrice, setPPrice]             = useState('');
+  const [pPurchasePrice, setPPurchasePrice] = useState('');
+  const [pTax, setPTax]                 = useState('');
 
-  // New version form
-  const [vProd, setVProd]   = useState('');
-  const [vName, setVName]   = useState('');
-  const [vMult, setVMult]   = useState('');
-  const [vPrice, setVPrice] = useState('');
-
-  // Edit prod form
-  const [showEditProd, setShowEditProd] = useState(false);
-  const [editProdId, setEditProdId]     = useState('');
-  const [epName, setEpName]             = useState('');
-  const [epUnit, setEpUnit]             = useState('');
-  const [epStock, setEpStock]           = useState('');
-
-  // Edit ver form
-  const [showEditVer, setShowEditVer]   = useState(false);
-  const [editVerId, setEditVerId]       = useState('');
-  const [evName, setEvName]             = useState('');
-  const [evMult, setEvMult]             = useState('');
-  const [evPrice, setEvPrice]           = useState('');
+  // Edit form
+  const [epName, setEpName]               = useState('');
+  const [epUnit, setEpUnit]               = useState('');
+  const [epStock, setEpStock]             = useState('');
+  const [epPrice, setEpPrice]             = useState('');
+  const [epPurchasePrice, setEpPurchasePrice] = useState('');
+  const [epTax, setEpTax]                 = useState('');
 
   const load = () => api.get('/products').then(r => { setProducts(r.data); setLoading(false); });
   useEffect(() => { load(); }, []);
 
   const addProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.post('/products', { name: pName, unitName: pUnit, freeStock: parseFloat(pStock) });
-    setPName(''); setPUnit(''); setPStock('');
-    setShowProd(false);
+    await api.post('/products', {
+      name: pName,
+      unitName: pUnit,
+      freeStock: parseFloat(pStock) || 0,
+      price: parseFloat(pPrice) || 0,
+      purchasePrice: parseFloat(pPurchasePrice) || 0,
+      taxRate: parseFloat(pTax) || 0,
+    });
+    setPName(''); setPUnit(''); setPStock(''); setPPrice(''); setPPurchasePrice(''); setPTax('');
+    setShowAdd(false);
     load();
   };
 
-  const addVersion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await api.post(`/products/${vProd}/versions`, {
-      name: vName, multiplier: parseFloat(vMult), price: parseFloat(vPrice),
-    });
-    setVName(''); setVMult(''); setVPrice('');
-    setShowVer(false);
-    load();
+  const openEdit = (p: Product) => {
+    setEditId(p._id);
+    setEpName(p.name);
+    setEpUnit(p.unitName);
+    setEpStock(p.freeStock.toString());
+    setEpPrice((p.price ?? 0).toString());
+    setEpPurchasePrice((p.purchasePrice ?? 0).toString());
+    setEpTax((p.taxRate || 0).toString());
+    setShowEdit(true);
   };
 
   const editProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.put(`/products/${editProdId}`, { name: epName, unitName: epUnit, freeStock: parseFloat(epStock) });
-    setShowEditProd(false);
+    await api.put(`/products/${editId}`, {
+      name: epName,
+      unitName: epUnit,
+      freeStock: parseFloat(epStock) || 0,
+      price: parseFloat(epPrice) || 0,
+      purchasePrice: parseFloat(epPurchasePrice) || 0,
+      taxRate: parseFloat(epTax) || 0,
+    });
+    setShowEdit(false);
     load();
   };
 
-  const deleteProduct = async (id: string, versionCount: number) => {
-    if (versionCount > 0) return alert('Delete all versions first!');
+  const deleteProduct = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     await api.delete(`/products/${id}`);
     load();
   };
 
-  const editVersion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await api.put(`/products/versions/${editVerId}`, { name: evName, multiplier: parseFloat(evMult), price: parseFloat(evPrice) });
-    setShowEditVer(false);
-    load();
-  };
-
-  const deleteVersion = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this version?')) return;
-    await api.delete(`/products/versions/${id}`);
-    load();
+  const margin = (p: Product) => {
+    const sell = p.price ?? 0;
+    const buy  = p.purchasePrice ?? 0;
+    if (!buy || !sell) return null;
+    return (((sell - buy) / buy) * 100).toFixed(1);
   };
 
   return (
@@ -89,16 +89,10 @@ export default function InventoryPage() {
       <div className="page-content fade-up">
         <div className="page-header">
           <h1 className="page-title">Inventory</h1>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost" style={{ padding: '10px 14px', fontSize: 13 }}
-              onClick={() => setShowVer(true)}>
-              <Plus size={16} /> Version
-            </button>
-            <button className="btn btn-primary" style={{ padding: '10px 14px', fontSize: 13 }}
-              onClick={() => setShowProd(true)}>
-              <Plus size={16} /> Product
-            </button>
-          </div>
+          <button className="btn btn-primary" style={{ padding: '10px 14px', fontSize: 13 }}
+            onClick={() => setShowAdd(true)}>
+            <LuPlus size={16} /> Product
+          </button>
         </div>
 
         {loading && <div className="spinner" />}
@@ -109,16 +103,12 @@ export default function InventoryPage() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: 17, display: 'flex', alignItems: 'center', gap: 8 }}>
                   {p.name}
-                  <button style={{ color: '#3b82f6', background: 'none', border: 'none', padding: 0 }} onClick={() => {
-                    setEditProdId(p._id); setEpName(p.name); setEpUnit(p.unitName); setEpStock(p.freeStock.toString()); setShowEditProd(true);
-                  }}>
-                    <Edit2 size={14} />
+                  <button style={{ color: '#3b82f6', background: 'none', border: 'none', padding: 0 }} onClick={() => openEdit(p)}>
+                    <LuPencil size={14} />
                   </button>
-                  {p.versions?.length === 0 && (
-                    <button style={{ color: '#ef4444', background: 'none', border: 'none', padding: 0 }} onClick={() => deleteProduct(p._id, p.versions.length)}>
-                      <Trash2 size={14} />
-                    </button>
-                  )}
+                  <button style={{ color: '#ef4444', background: 'none', border: 'none', padding: 0 }} onClick={() => deleteProduct(p._id)}>
+                    <LuTrash2 size={14} />
+                  </button>
                 </div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 2 }}>Unit: {p.unitName}</div>
               </div>
@@ -130,27 +120,34 @@ export default function InventoryPage() {
               </div>
             </div>
 
-            {p.versions?.length > 0 && (
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-                <div className="label" style={{ marginBottom: 8 }}>Versions</div>
-                {p.versions.map(v => (
-                  <div key={v._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', fontSize: 14 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontWeight: 600 }}>
-                      {v.name} (×{v.multiplier})
-                      <button style={{ color: '#3b82f6', background: 'none', border: 'none', padding: 0 }} onClick={() => {
-                        setEditVerId(v._id); setEvName(v.name); setEvMult(v.multiplier.toString()); setEvPrice(v.price.toString()); setShowEditVer(true);
-                      }}>
-                        <Edit2 size={13} />
-                      </button>
-                      <button style={{ color: '#ef4444', background: 'none', border: 'none', padding: 0 }} onClick={() => deleteVersion(v._id)}>
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                    <span style={{ fontWeight: 800, color: 'var(--blue)' }}>₹ {v.price}</span>
-                  </div>
-                ))}
+            {/* Price info */}
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, display: 'flex', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: 'var(--blue)' }}><LuTag size={13} /></span>
+                <div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sell</div>
+                  <div style={{ fontWeight: 800, color: 'var(--blue)', fontSize: 15 }}>₹ {p.price ?? 0}</div>
+                </div>
               </div>
-            )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: 'var(--text-muted)' }}><LuShoppingBag size={13} /></span>
+                <div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Purchase</div>
+                  <div style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: 15 }}>₹ {p.purchasePrice ?? 0}</div>
+                </div>
+              </div>
+              {margin(p) && (
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+                  <span style={{
+                    fontSize: 12, fontWeight: 700, padding: '3px 9px', borderRadius: 8,
+                    background: parseFloat(margin(p)!) >= 0 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                    color: parseFloat(margin(p)!) >= 0 ? 'var(--green)' : 'var(--red)',
+                  }}>
+                    {margin(p)}% margin
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         ))}
 
@@ -162,11 +159,12 @@ export default function InventoryPage() {
 
       <BottomNav />
 
-      {showProd && (
-        <Modal title="New Product" onClose={() => setShowProd(false)}>
+      {/* Add Modal */}
+      {showAdd && (
+        <Modal title="New Product" onClose={() => setShowAdd(false)}>
           <form onSubmit={addProduct} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
-              <label className="label">Material Name</label>
+              <label className="label">Product Name</label>
               <input className="input" value={pName} onChange={e => setPName(e.target.value)} placeholder="e.g. Sugar" required />
             </div>
             <div>
@@ -174,69 +172,57 @@ export default function InventoryPage() {
               <input className="input" value={pUnit} onChange={e => setPUnit(e.target.value)} placeholder="e.g. KG" required />
             </div>
             <div>
-              <label className="label">Initial Free Stock</label>
-              <input className="input" type="number" step="0.01" value={pStock} onChange={e => setPStock(e.target.value)} placeholder="0" required />
+              <label className="label">Initial Stock</label>
+              <input className="input" type="number" step="0.01" value={pStock} onChange={e => setPStock(e.target.value)} placeholder="0" />
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="label">Selling Price (₹)</label>
+                <input className="input" type="number" step="0.01" value={pPrice} onChange={e => setPPrice(e.target.value)} placeholder="0.00" required />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="label">Purchase Price (₹)</label>
+                <input className="input" type="number" step="0.01" value={pPurchasePrice} onChange={e => setPPurchasePrice(e.target.value)} placeholder="0.00" />
+              </div>
+            </div>
+            <div>
+              <label className="label">GST Rate (%)</label>
+              <input className="input" type="number" step="0.1" value={pTax} onChange={e => setPTax(e.target.value)} placeholder="0" />
             </div>
             <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 4 }}>Save Product</button>
           </form>
         </Modal>
       )}
 
-      {showVer && (
-        <Modal title="New Version" onClose={() => setShowVer(false)}>
-          <form onSubmit={addVersion} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <label className="label">Product</label>
-              <select className="input" value={vProd} onChange={e => setVProd(e.target.value)} required>
-                <option value="">Select product…</option>
-                {products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Version Name</label>
-              <input className="input" value={vName} onChange={e => setVName(e.target.value)} placeholder="e.g. 500g Pack" required />
-            </div>
-            <div>
-              <label className="label">Multiplier</label>
-              <input className="input" type="number" step="0.0001" value={vMult} onChange={e => setVMult(e.target.value)} placeholder="e.g. 0.5" required />
-            </div>
-            <div>
-              <label className="label">Price (₹)</label>
-              <input className="input" type="number" value={vPrice} onChange={e => setVPrice(e.target.value)} placeholder="e.g. 45" required />
-            </div>
-            <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 4 }}>Link Version</button>
-          </form>
-        </Modal>
-      )}
-
-      {showEditProd && (
-        <Modal title="Edit Product" onClose={() => setShowEditProd(false)}>
+      {/* Edit Modal */}
+      {showEdit && (
+        <Modal title="Edit Product" onClose={() => setShowEdit(false)}>
           <form onSubmit={editProduct} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
-              <input className="input" value={epName} onChange={e => setEpName(e.target.value)} placeholder="Material Name" required />
+              <label className="label">Product Name</label>
+              <input className="input" value={epName} onChange={e => setEpName(e.target.value)} placeholder="Product Name" required />
             </div>
             <div>
+              <label className="label">Unit</label>
               <input className="input" value={epUnit} onChange={e => setEpUnit(e.target.value)} placeholder="Unit" required />
             </div>
             <div>
-              <input className="input" type="number" step="0.01" value={epStock} onChange={e => setEpStock(e.target.value)} placeholder="Free Stock" required />
+              <label className="label">Free Stock</label>
+              <input className="input" type="number" step="0.01" value={epStock} onChange={e => setEpStock(e.target.value)} placeholder="0" required />
             </div>
-            <button type="submit" className="btn btn-primary btn-full">Save Changes</button>
-          </form>
-        </Modal>
-      )}
-
-      {showEditVer && (
-        <Modal title="Edit Version" onClose={() => setShowEditVer(false)}>
-          <form onSubmit={editVersion} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <input className="input" value={evName} onChange={e => setEvName(e.target.value)} placeholder="Version Name" required />
-            </div>
-            <div>
-              <input className="input" type="number" step="0.0001" value={evMult} onChange={e => setEvMult(e.target.value)} placeholder="Multiplier" required />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <label className="label">Selling Price (₹)</label>
+                <input className="input" type="number" step="0.01" value={epPrice} onChange={e => setEpPrice(e.target.value)} placeholder="0.00" required />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="label">Purchase Price (₹)</label>
+                <input className="input" type="number" step="0.01" value={epPurchasePrice} onChange={e => setEpPurchasePrice(e.target.value)} placeholder="0.00" />
+              </div>
             </div>
             <div>
-              <input className="input" type="number" value={evPrice} onChange={e => setEvPrice(e.target.value)} placeholder="Price" required />
+              <label className="label">GST Rate (%)</label>
+              <input className="input" type="number" step="0.1" value={epTax} onChange={e => setEpTax(e.target.value)} placeholder="0" />
             </div>
             <button type="submit" className="btn btn-primary btn-full">Save Changes</button>
           </form>

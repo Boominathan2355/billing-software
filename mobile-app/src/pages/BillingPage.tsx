@@ -1,33 +1,31 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2, CheckCircle, XCircle, Save, FolderOpen } from 'lucide-react';
+import { LuPlus, LuTrash2, LuCircleCheck, LuCircleX, LuSave, LuFolderOpen, LuCoins, LuNotebook } from 'react-icons/lu';
 import api from '../api/client';
-import type { Customer, Product, Version, BillItem } from '../types';
+import type { Customer, Product, BillItem } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
 
 export default function BillingPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts]   = useState<Product[]>([]);
-  const [versions, setVersions]   = useState<Version[]>([]);
 
   const [selectedCustomer, setSelectedCustomer]   = useState('');
   const [customerName, setCustomerName]           = useState('');
   const [customerPhone, setCustomerPhone]         = useState('');
-  
+
   const [selectedProduct, setSelectedProduct]     = useState('');
-  const [selectedVersion, setSelectedVersion]     = useState('');
   const [qty, setQty]                             = useState('');
   const [paymentType, setPaymentType]             = useState<'CASH' | 'UDHAAR'>('CASH');
-  
+
   const [discountType, setDiscountType]           = useState<'FLAT' | 'PERCENTAGE'>('FLAT');
   const [discountValue, setDiscountValue]         = useState('');
-  
+
   const [bill, setBill]                           = useState<BillItem[]>([]);
   const [draftId, setDraftId]                     = useState<string | null>(null);
 
   const [showHistory, setShowHistory]   = useState(false);
   const [history, setHistory]           = useState<any[]>([]);
-  
+
   const [showDrafts, setShowDrafts]     = useState(false);
   const [drafts, setDrafts]             = useState<any[]>([]);
 
@@ -40,29 +38,15 @@ export default function BillingPage() {
     api.get('/products').then(r => setProducts(r.data));
   }, []);
 
-  useEffect(() => {
-    if (!selectedProduct) { setVersions([]); setSelectedVersion(''); return; }
-    api.get(`/products/${selectedProduct}/versions`).then(r => {
-      setVersions(r.data);
-      if (r.data.length > 0) {
-        setSelectedVersion(r.data[0]._id);
-      } else {
-        setSelectedVersion('');
-      }
-    });
-  }, [selectedProduct]);
-
   const addItem = () => {
-    const ver = versions.find(v => v._id === selectedVersion);
     const prod = products.find(p => p._id === selectedProduct);
-    if (!ver || !prod || !qty) return;
+    if (!prod || !qty) return;
     setBill(prev => [...prev, {
-      versionId: ver._id,
-      versionName: ver.name,
+      productId: prod._id,
       productName: prod.name,
       qty: parseFloat(qty),
-      price: ver.price,
-      taxAmount: parseFloat(qty) * ver.price * (prod.taxRate || 0) / 100,
+      price: prod.price,
+      taxAmount: parseFloat(qty) * prod.price * (prod.taxRate || 0) / 100,
     }]);
     setQty('');
   };
@@ -76,12 +60,12 @@ export default function BillingPage() {
   const saveBill = async (status: 'DRAFT' | 'COMPLETED' = 'COMPLETED') => {
     if (!bill.length) return;
     setSaving(true);
-    
+
     const payload: any = {
       customerId: selectedCustomer || null,
       paymentType,
-      items: bill.map(i => ({ versionId: i.versionId, qty: i.qty })),
-      status
+      items: bill.map(i => ({ productId: i.productId, qty: i.qty, price: i.price })),
+      status,
     };
     if (!selectedCustomer) {
       if (customerName) payload.customerName = customerName;
@@ -103,17 +87,17 @@ export default function BillingPage() {
         setPrintBillData(data);
         setTimeout(() => window.print(), 100);
       }
-      
+
       resetForm();
       setTimeout(() => setSaved(false), 2500);
-    } catch(err: any) {
+    } catch (err: any) {
       const errMsg = err.response?.data?.error || err.message;
-      alert("Failed to save bill: " + errMsg);
-      console.error("Save bill error:", err.response?.data || err);
+      alert('Failed to save bill: ' + errMsg);
+      console.error('Save bill error:', err.response?.data || err);
       setSaving(false);
     }
   };
-  
+
   const resetForm = () => {
     setBill([]);
     setSelectedCustomer('');
@@ -139,13 +123,13 @@ export default function BillingPage() {
     setHistory(r.data);
     setShowHistory(true);
   };
-  
+
   const loadDrafts = async () => {
     const r = await api.get('/bills?status=DRAFT');
     setDrafts(r.data);
     setShowDrafts(true);
   };
-  
+
   const resumeDraft = (d: any) => {
     setSelectedCustomer(d.customerId?._id || '');
     setCustomerName(d.customerName || '');
@@ -157,12 +141,11 @@ export default function BillingPage() {
     }
     setDraftId(d._id);
     setBill(d.items.map((i: any) => ({
-      versionId: i.versionId,
-      versionName: i.versionName,
+      productId: i.productId,
       productName: i.productName,
       qty: i.qty,
       price: i.price,
-      taxAmount: i.taxAmount
+      taxAmount: i.taxAmount,
     })));
     setShowDrafts(false);
   };
@@ -171,66 +154,62 @@ export default function BillingPage() {
 
   return (
     <div>
-      {/* 
-        The Printable Receipt layer 
-        Hidden normally, but visible during window.print() + everything else hidden
-      */}
       {printBillData && (
         <div className="printable-receipt" style={{ display: 'none' }}>
-           <div style={{ textAlign: 'center', marginBottom: 12 }}>
-             <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>INVOICE</h2>
-             <div style={{ fontSize: 12 }}>{new Date(printBillData.date).toLocaleString()}</div>
-             <div style={{ fontSize: 14, fontWeight: 'bold', marginTop: 4 }}>To: {printBillData.customerName}</div>
-           </div>
-           
-           <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', marginBottom: 16 }}>
-             <thead>
-               <tr style={{ borderBottom: '1px solid #000' }}>
-                 <th style={{ textAlign: 'left', padding: '4px 0' }}>Item</th>
-                 <th style={{ textAlign: 'center', padding: '4px 0' }}>Qty</th>
-                 <th style={{ textAlign: 'right', padding: '4px 0' }}>Amt</th>
-               </tr>
-             </thead>
-             <tbody>
-               {printBillData.items.map((it: any, i: number) => (
-                 <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                   <td style={{ padding: '4px 0' }}>
-                     <div>{it.productName} ({it.versionName})</div>
-                     {it.taxAmount > 0 && <div style={{ fontSize: 10, color: '#555' }}>Inc. GST</div>}
-                   </td>
-                   <td style={{ textAlign: 'center', padding: '4px 0' }}>{it.qty}</td>
-                   <td style={{ textAlign: 'right', padding: '4px 0' }}>Rs. {(it.qty * it.price).toFixed(2)}</td>
-                 </tr>
-               ))}
-             </tbody>
-           </table>
+          <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>INVOICE</h2>
+            <div style={{ fontSize: 12 }}>{new Date(printBillData.date).toLocaleString()}</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', marginTop: 4 }}>To: {printBillData.customerName}</div>
+          </div>
 
-           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: '2px solid #000', paddingTop: 8, fontSize: 13 }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-               <span>Subtotal:</span>
-               <span>Rs. {printBillData.subTotal.toFixed(2)}</span>
-             </div>
-             {printBillData.taxAmount > 0 && (
-               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                 <span>GST:</span>
-                 <span>Rs. {printBillData.taxAmount.toFixed(2)}</span>
-               </div>
-             )}
-             {printBillData.discount && printBillData.discount.amount > 0 && (
-               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                 <span>Discount:</span>
-                 <span>- Rs. {printBillData.discount.amount.toFixed(2)}</span>
-               </div>
-             )}
-             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 'bold', marginTop: 4, paddingTop: 4, borderTop: '1px solid #000' }}>
-               <span>Total:</span>
-               <span>Rs. {printBillData.total.toFixed(2)}</span>
-             </div>
-           </div>
-           
-           <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, fontStyle: 'italic' }}>
-             Thank you for your business!
-           </div>
+          <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', marginBottom: 16 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #000' }}>
+                <th style={{ textAlign: 'left', padding: '4px 0' }}>Item</th>
+                <th style={{ textAlign: 'center', padding: '4px 0' }}>Qty</th>
+                <th style={{ textAlign: 'right', padding: '4px 0' }}>Amt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printBillData.items.map((it: any, i: number) => (
+                <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
+                  <td style={{ padding: '4px 0' }}>
+                    <div>{it.productName}</div>
+                    {it.taxAmount > 0 && <div style={{ fontSize: 10, color: '#555' }}>Inc. GST</div>}
+                  </td>
+                  <td style={{ textAlign: 'center', padding: '4px 0' }}>{it.qty}</td>
+                  <td style={{ textAlign: 'right', padding: '4px 0' }}>Rs. {(it.qty * it.price).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: '2px solid #000', paddingTop: 8, fontSize: 13 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Subtotal:</span>
+              <span>Rs. {printBillData.subTotal.toFixed(2)}</span>
+            </div>
+            {printBillData.taxAmount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>GST:</span>
+                <span>Rs. {printBillData.taxAmount.toFixed(2)}</span>
+              </div>
+            )}
+            {printBillData.discount?.amount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Discount:</span>
+                <span>- Rs. {printBillData.discount.amount.toFixed(2)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 'bold', marginTop: 4, paddingTop: 4, borderTop: '1px solid #000' }}>
+              <span>Total:</span>
+              <span>Rs. {printBillData.total.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, fontStyle: 'italic' }}>
+            Thank you for your business!
+          </div>
         </div>
       )}
 
@@ -240,7 +219,7 @@ export default function BillingPage() {
           <h1 className="page-title">Billing <span style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 'normal' }}>{draftId ? ' (Resuming Draft)' : ''}</span></h1>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={loadDrafts}>
-              <FolderOpen size={14} style={{ marginRight: 4 }} /> Drafts
+              <LuFolderOpen size={14} /> Drafts
             </button>
             <button className="btn btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={loadHistory}>
               History
@@ -255,7 +234,7 @@ export default function BillingPage() {
             color: 'var(--green)', borderRadius: 14, padding: '12px 18px', marginBottom: 16,
             fontWeight: 700,
           }}>
-            <CheckCircle size={18} /> Bill saved successfully!
+            <LuCircleCheck size={18} /> Bill saved successfully!
           </div>
         )}
 
@@ -265,12 +244,10 @@ export default function BillingPage() {
           <select className="input" value={selectedCustomer} onChange={e => setSelectedCustomer(e.target.value)}>
             <option value="">Walk-in Customer</option>
             {customers.map(c => (
-              <option key={c._id} value={c._id}>
-                {c.name} — {c.phone}
-              </option>
+              <option key={c._id} value={c._id}>{c.name} — {c.phone}</option>
             ))}
           </select>
-          
+
           {!selectedCustomer && (
             <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
               <input type="text" className="input" placeholder="Ad-hoc Name (optional)" value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ flex: 1 }} />
@@ -295,18 +272,9 @@ export default function BillingPage() {
             <select className="input" value={selectedProduct} onChange={e => setSelectedProduct(e.target.value)}>
               <option value="">Select Product…</option>
               {products.map(p => (
-                <option key={p._id} value={p._id}>{p.name} (Stock: {p.freeStock} {p.unitName})</option>
+                <option key={p._id} value={p._id}>{p.name} — ₹{p.price} (Stock: {p.freeStock} {p.unitName})</option>
               ))}
             </select>
-
-            {/* Hidden version selector - auto-selected when product changes */}
-            {versions.length > 1 && (
-               <select className="input" value={selectedVersion} onChange={e => setSelectedVersion(e.target.value)}>
-                 {versions.map(v => (
-                   <option key={v._id} value={v._id}>{v.name} — ₹{v.price}</option>
-                 ))}
-               </select>
-            )}
 
             <div style={{ display: 'flex', gap: 10 }}>
               <input
@@ -317,8 +285,8 @@ export default function BillingPage() {
                 onChange={e => setQty(e.target.value)}
                 style={{ flex: 1 }}
               />
-              <button className="btn btn-primary" onClick={addItem} disabled={!selectedVersion || !qty}>
-                <Plus size={18} /> Add
+              <button className="btn btn-primary" onClick={addItem} disabled={!selectedProduct || !qty}>
+                <LuPlus size={18} /> Add
               </button>
             </div>
           </div>
@@ -332,14 +300,14 @@ export default function BillingPage() {
               <div key={idx} className="row">
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{item.productName}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{item.versionName} × {item.qty}</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>Qty: {item.qty} × ₹{item.price}</div>
                 </div>
                 <div style={{ fontWeight: 800, fontSize: 16, color: 'var(--blue)' }}>
                   ₹ {(item.qty * item.price).toFixed(2)}
                 </div>
                 <button onClick={() => setBill(b => b.filter((_, i) => i !== idx))}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)' }}>
-                  <Trash2 size={18} />
+                  <LuTrash2 size={18} />
                 </button>
               </div>
             ))}
@@ -362,7 +330,7 @@ export default function BillingPage() {
                 <input className="input" type="number" placeholder="Value" value={discountValue} onChange={e => setDiscountValue(e.target.value)} style={{ width: 80, padding: 4 }} />
                 {discountAmount > 0 && <span style={{ marginLeft: 'auto', fontSize: 14, color: 'var(--green)' }}>- ₹ {discountAmount.toFixed(2)}</span>}
               </div>
-              
+
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: 12 }}>
                 <span style={{ fontWeight: 700, color: 'var(--text-muted)' }}>Total Amount</span>
                 <span style={{ fontWeight: 900, fontSize: 24, color: 'var(--text)' }}>₹ {total.toFixed(2)}</span>
@@ -383,16 +351,18 @@ export default function BillingPage() {
                   style={{ flex: 1, fontSize: 14 }}
                   onClick={() => setPaymentType(t)}
                 >
-                  {t === 'CASH' ? '💵 Cash' : '📒 Udhaar'}
+                  {t === 'CASH'
+                    ? <><LuCoins size={17} /> Cash</>
+                    : <><LuNotebook size={17} /> Udhaar</>}
                 </button>
               ))}
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => saveBill('DRAFT')} disabled={saving} style={{ flex: 1, fontSize: 16 }}>
-                <Save size={18} style={{ marginRight: 6 }} /> Draft
+                <LuSave size={18} /> Draft
               </button>
               <button className="btn btn-success" onClick={() => saveBill('COMPLETED')} disabled={saving} style={{ flex: 2, fontSize: 16 }}>
-                {saving ? 'Saving…' : '✅ Save Bill'}
+                {saving ? 'Saving…' : <><LuCircleCheck size={18} /> Save Bill</>}
               </button>
             </div>
           </div>
@@ -413,7 +383,7 @@ export default function BillingPage() {
                 <div key={b._id} className="row" style={{ opacity: b.cancelled ? 0.5 : 1 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>
-                      Bill to {b.customerName || (b.customerId ? b.customerId.name : 'Walk-in')} 
+                      Bill to {b.customerName || (b.customerId ? b.customerId.name : 'Walk-in')}
                       {b.cancelled && <span style={{ color: 'red', marginLeft: 6, fontSize: 11 }}>[CANCELLED]</span>}
                     </div>
                     <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
@@ -425,7 +395,7 @@ export default function BillingPage() {
                     <div style={{ fontWeight: 800, color: 'var(--green)' }}>₹ {b.total.toFixed(2)}</div>
                     {!b.cancelled && (
                       <button onClick={() => cancelBill(b._id)} style={{ color: '#ef4444', background: 'none', border: 'none', padding: 0, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, marginLeft: 'auto', cursor: 'pointer' }}>
-                        <XCircle size={12} /> Cancel
+                        <LuCircleX size={12} /> Cancel
                       </button>
                     )}
                   </div>
@@ -446,7 +416,7 @@ export default function BillingPage() {
                 <div key={b._id} className="row">
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 14 }}>
-                      Draft: {b.customerName || (b.customerId ? b.customerId.name : 'Walk-in')} 
+                      Draft: {b.customerName || (b.customerId ? b.customerId.name : 'Walk-in')}
                     </div>
                     <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
                       {new Date(b.date).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -457,10 +427,10 @@ export default function BillingPage() {
                     <div style={{ fontWeight: 800, color: 'var(--text)' }}>₹ {b.total.toFixed(2)}</div>
                     <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                       <button onClick={() => cancelBill(b._id, true)} style={{ color: '#ef4444', background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, cursor: 'pointer' }}>
-                        <Trash2 size={12} /> Discard
+                        <LuTrash2 size={12} /> Discard
                       </button>
                       <button onClick={() => resumeDraft(b)} style={{ color: 'var(--blue)', background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
-                         Resume
+                        Resume
                       </button>
                     </div>
                   </div>

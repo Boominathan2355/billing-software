@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Plus } from 'lucide-react';
+import { LuPlus, LuTrendingUp, LuTrendingDown } from 'react-icons/lu';
 import api from '../api/client';
 import type { Transaction } from '../types';
 import BottomNav from '../components/BottomNav';
@@ -40,7 +40,7 @@ export default function BooksPage() {
         <div className="page-header">
           <h1 className="page-title">Books</h1>
           <button className="btn btn-primary" style={{ padding: '10px 16px', fontSize: 13 }} onClick={() => setShowAdd(true)}>
-            <Plus size={16} /> Entry
+            <LuPlus size={16} /> Entry
           </button>
         </div>
 
@@ -107,7 +107,9 @@ export default function BooksPage() {
                 <button type="button" key={t}
                   className={`btn ${txnType === t ? (t === 'IN' ? 'btn-success' : 'btn-danger') : 'btn-ghost'}`}
                   style={{ flex: 1, fontSize: 14 }} onClick={() => setTxnType(t)}>
-                  {t === 'IN' ? '📈 Money In' : '📉 Money Out'}
+                  {t === 'IN'
+                    ? <><LuTrendingUp size={16} /> Money In</>
+                    : <><LuTrendingDown size={16} /> Money Out</>}
                 </button>
               ))}
             </div>

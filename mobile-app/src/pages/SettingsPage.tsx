@@ -1,74 +1,93 @@
 import BottomNav from '../components/BottomNav';
-import { Settings, Info, Bell, Shield, Database, Globe } from 'lucide-react';
+import { LuSettings, LuInfo, LuBell, LuShield, LuDatabase, LuGlobe } from 'react-icons/lu';
+
+function SettingRow({ icon, label, badge, badgeColor, disabled = false }: {
+  icon: React.ReactNode;
+  label: string;
+  badge: string;
+  badgeColor: string;
+  disabled?: boolean;
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '16px 18px', borderBottom: '1px solid var(--border)',
+      opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'default',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ color: 'var(--text-muted)' }}>{icon}</span>
+        <span style={{ fontWeight: 500, fontSize: 15 }}>{label}</span>
+      </div>
+      <span style={{
+        fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 20,
+        background: `${badgeColor}18`, color: badgeColor, letterSpacing: '0.05em',
+      }}>
+        {badge}
+      </span>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   return (
-    <div className="pb-24 slide-up">
-      <header className="p-4 glass-header sticky top-0 z-10">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Settings className="text-blue-500" />
-          Settings
-        </h1>
-      </header>
+    <div>
+      <div className="page-content fade-up">
 
-      <main className="p-4 space-y-6">
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider px-1">App Settings</h3>
-          <div className="card divide-y divide-white/5 p-0">
-            <div className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell size={20} className="text-blue-400" />
-                <span>Notifications</span>
-              </div>
-              <div className="text-xs text-blue-500 font-bold px-2 py-1 bg-blue-500/10 rounded-full">ON</div>
-            </div>
-            <div className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Database size={20} className="text-green-400" />
-                <span>Sync with Server</span>
-              </div>
-              <div className="text-xs text-green-500 font-bold px-2 py-1 bg-green-500/10 rounded-full">AUTO</div>
-            </div>
-            <div className="p-4 flex items-center justify-between cursor-not-allowed opacity-60">
-              <div className="flex items-center gap-3">
-                <Shield size={20} className="text-purple-400" />
-                <span>Biometric Lock</span>
-              </div>
-              <div className="text-xs text-slate-500 font-bold px-2 py-1 bg-slate-500/10 rounded-full">OFF</div>
-            </div>
+        {/* Header */}
+        <div className="page-header">
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: 'var(--blue)' }}><LuSettings /></span>
+            Settings
+          </h1>
+        </div>
+
+        {/* App Settings */}
+        <div style={{ marginBottom: 20 }}>
+          <div className="label" style={{ paddingLeft: 4, marginBottom: 10 }}>App Settings</div>
+          <div className="card" style={{ padding: 0 }}>
+            <SettingRow icon={<LuBell size={20} />}     label="Notifications"   badge="ON"   badgeColor="var(--blue)" />
+            <SettingRow icon={<LuDatabase size={20} />} label="Sync with Server" badge="AUTO" badgeColor="var(--green)" />
+            <SettingRow icon={<LuShield size={20} />}   label="Biometric Lock"  badge="OFF"  badgeColor="var(--text-muted)" disabled />
           </div>
-        </section>
+        </div>
 
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider px-1">About</h3>
-          <div className="card divide-y divide-white/5 p-0">
-            <div className="p-4 flex items-center gap-3">
-              <Info size={20} className="text-slate-400" />
-              <div className="flex-1">
-                <div className="font-medium">Version</div>
-                <div className="text-xs text-slate-500">v1.2.4 (Latest)</div>
+        {/* About */}
+        <div style={{ marginBottom: 20 }}>
+          <div className="label" style={{ paddingLeft: 4, marginBottom: 10 }}>About</div>
+          <div className="card" style={{ padding: 0 }}>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ color: 'var(--text-muted)' }}><LuInfo size={20} /></span>
+              <div>
+                <div style={{ fontWeight: 500, fontSize: 15 }}>Version</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>v1.2.4 (Latest)</div>
               </div>
             </div>
-            <a 
-              href="https://github.com" 
-              target="_blank" 
+
+            <a
+              href="https://github.com"
+              target="_blank"
               rel="noopener noreferrer"
-              className="p-4 flex items-center gap-3 hover:bg-white/5 transition-colors"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '16px 18px', textDecoration: 'none', color: 'var(--text)',
+              }}
             >
-              <Globe size={20} className="text-slate-400" />
-              <div className="flex-1">
-                <div className="font-medium">Visit GitHub</div>
-                <div className="text-xs text-slate-500">Check for updates & source code</div>
+              <span style={{ color: 'var(--text-muted)' }}><LuGlobe size={20} /></span>
+              <div>
+                <div style={{ fontWeight: 500, fontSize: 15 }}>Visit GitHub</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Check for updates &amp; source code</div>
               </div>
             </a>
-          </div>
-        </section>
 
-        <div className="text-center text-xs text-slate-500 pt-4">
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', paddingTop: 8, paddingBottom: 8 }}>
           &copy; 2026 BillERP Systems. All rights reserved.
         </div>
-      </main>
 
+      </div>
       <BottomNav />
     </div>
   );

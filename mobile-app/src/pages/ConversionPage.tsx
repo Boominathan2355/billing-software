@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { LuArrowRight, LuLogOut, LuLogIn, LuZap, LuCircleCheck } from 'react-icons/lu';
 import api from '../api/client';
 import type { Product } from '../types';
 import BottomNav from '../components/BottomNav';
@@ -24,9 +24,10 @@ export default function ConversionPage() {
         fromProductId: fromId, fromQty: parseFloat(fromQty),
         toProductId: toId,   toQty: parseFloat(toQty),
       });
+      setMsg('');
       const from = products.find(p => p._id === fromId);
       const to   = products.find(p => p._id === toId);
-      setMsg(`✅ Converted ${fromQty} ${from?.unitName} of ${from?.name} → ${toQty} ${to?.unitName} of ${to?.name}`);
+      setMsg(`Converted ${fromQty} ${from?.unitName} of ${from?.name} → ${toQty} ${to?.unitName} of ${to?.name}`);
       setFromQty(''); setToQty('');
       // Reload to refresh stock levels
       api.get('/products').then(r => setProducts(r.data));
@@ -45,14 +46,14 @@ export default function ConversionPage() {
           <h1 className="page-title">Stock Conversion</h1>
         </div>
 
-        {msg   && <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: 'var(--green)', borderRadius: 14, padding: '12px 16px', marginBottom: 16, fontWeight: 600, fontSize: 14 }}>{msg}</div>}
+        {msg && <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: 'var(--green)', borderRadius: 14, padding: '12px 16px', marginBottom: 16, fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}><LuCircleCheck size={16} />{msg}</div>}
         {error && <div className="error-box">{error}</div>}
 
         <form onSubmit={convert}>
           {/* From */}
           <div className="card" style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--red)', marginBottom: 12 }}>
-              📤 Stock Out (From)
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--red)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <LuLogOut size={14} /> Stock Out (From)
             </div>
             <label className="label">Product</label>
             <select className="input" value={fromId} onChange={e => setFromId(e.target.value)} required style={{ marginBottom: 12 }}>
@@ -79,14 +80,14 @@ export default function ConversionPage() {
               width: 40, height: 40, borderRadius: 12,
               background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <ArrowRight size={20} color="#fff" />
+            <LuArrowRight size={20} color="#fff" />
             </div>
           </div>
 
           {/* To */}
           <div className="card" style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--green)', marginBottom: 12 }}>
-              📥 Stock In (To)
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--green)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <LuLogIn size={14} /> Stock In (To)
             </div>
             <label className="label">Product</label>
             <select className="input" value={toId} onChange={e => setToId(e.target.value)} required style={{ marginBottom: 12 }}>
@@ -106,7 +107,7 @@ export default function ConversionPage() {
           </div>
 
           <button type="submit" className="btn btn-primary btn-full" style={{ fontSize: 16 }}>
-            ⚡ Perform Conversion
+            <LuZap size={18} /> Perform Conversion
           </button>
         </form>
         <div style={{ height: 24 }} />

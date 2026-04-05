@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ChevronRight } from 'lucide-react';
+import { LuPlus, LuChevronRight, LuMail, LuMapPin } from 'react-icons/lu';
 import api from '../api/client';
 import type { Customer } from '../types';
 import BottomNav from '../components/BottomNav';
@@ -11,9 +11,13 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading]     = useState(true);
   const [showAdd, setShowAdd]     = useState(false);
-  const [name, setName]           = useState('');
-  const [phone, setPhone]         = useState('');
-  const [error, setError]         = useState('');
+
+  // Form state
+  const [name, setName]       = useState('');
+  const [phone, setPhone]     = useState('');
+  const [email, setEmail]     = useState('');
+  const [address, setAddress] = useState('');
+  const [error, setError]     = useState('');
 
   const load = () =>
     api.get('/customers').then(r => { setCustomers(r.data); setLoading(false); });
@@ -24,8 +28,8 @@ export default function CustomersPage() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/customers', { name, phone });
-      setName(''); setPhone('');
+      await api.post('/customers', { name, phone, email: email || undefined, address: address || undefined });
+      setName(''); setPhone(''); setEmail(''); setAddress('');
       setShowAdd(false);
       load();
     } catch (err: any) {
@@ -40,7 +44,7 @@ export default function CustomersPage() {
           <h1 className="page-title">Customers</h1>
           <button className="btn btn-primary" style={{ padding: '10px 16px', fontSize: 13 }}
             onClick={() => setShowAdd(true)}>
-            <Plus size={16} /> Add
+            <LuPlus size={16} /> Add
           </button>
         </div>
 
@@ -62,13 +66,18 @@ export default function CustomersPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{c.name}</div>
                 <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>{c.phone}</div>
+                {c.email && (
+                  <div style={{ color: 'var(--text-muted)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    <LuMail size={11} /> {c.email}
+                  </div>
+                )}
               </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
                 <span className={c.balance > 0 ? 'badge-green' : c.balance < 0 ? 'badge-red' : 'badge-muted'}>
                   ₹ {Math.abs(c.balance).toFixed(0)}
                 </span>
+                <LuChevronRight size={16} color="var(--text-muted)" />
               </div>
-              <ChevronRight size={16} color="var(--text-muted)" />
             </div>
           </div>
         ))}
@@ -85,14 +94,41 @@ export default function CustomersPage() {
         <Modal title="New Customer" onClose={() => setShowAdd(false)}>
           <form onSubmit={addCustomer} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {error && <div className="error-box">{error}</div>}
+
             <div>
-              <label className="label">Name</label>
-              <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Full name" required />
+              <label className="label">Full Name</label>
+              <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Ravi Kumar" required />
             </div>
             <div>
               <label className="label">Phone</label>
               <input className="input" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Mobile number" required />
             </div>
+            <div>
+              <label className="label">Email <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}>
+                  <LuMail size={15} />
+                </span>
+                <input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" style={{ paddingLeft: 36 }} />
+              </div>
+            </div>
+            <div>
+              <label className="label">Address <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 12, top: 14, color: 'var(--text-muted)', pointerEvents: 'none' }}>
+                  <LuMapPin size={15} />
+                </span>
+                <textarea
+                  className="input"
+                  value={address}
+                  onChange={e => setAddress(e.target.value)}
+                  placeholder="Street, City..."
+                  rows={2}
+                  style={{ paddingLeft: 36, resize: 'none', lineHeight: '1.5' }}
+                />
+              </div>
+            </div>
+
             <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 4 }}>Add Customer</button>
           </form>
         </Modal>

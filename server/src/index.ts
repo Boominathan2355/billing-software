@@ -4,13 +4,7 @@ import cors from 'cors';
 import connectDB from './config/db';
 import User from './models/User';
 
-import authRoutes from './routes/auth';
-import customerRoutes from './routes/customers';
-import productRoutes from './routes/products';
-import billRoutes from './routes/bills';
-import conversionRoutes from './routes/conversion';
-import transactionRoutes from './routes/transactions';
-import dashboardRoutes from './routes/dashboard';
+import apiRoutes from './routes';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -55,13 +49,7 @@ const ensureConnection = async (req: express.Request, res: express.Response, nex
 app.use(ensureConnection);
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/bills', billRoutes);
-app.use('/api/conversion', conversionRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api', apiRoutes);
 
 // Export the app for Vercel Serverless Functions
 export default app;
