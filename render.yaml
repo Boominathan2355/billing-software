@@ -16,3 +16,18 @@ services:
         value: development
       - key: JWT_SECRET
         sync: false
+
+  - type: web
+    name: billing-client-feature
+    runtime: static
+    branch: feature/billing
+    rootDir: mobile-app
+    buildCommand: npm install && npm run build
+    staticPublishDir: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://billing-server-feature.onrender.com/api
