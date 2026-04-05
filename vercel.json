@@ -10,7 +10,15 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "storage-access=*, clipboard-write=*"
+          "value": "geolocation=(), microphone=(), camera=(), storage-access=*, clipboard-write=*"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
         }
       ]
     }
