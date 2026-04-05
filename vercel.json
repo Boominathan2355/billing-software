@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm run build-mobile",
+  "outputDirectory": "mobile-app/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
