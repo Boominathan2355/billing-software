@@ -15,6 +15,7 @@
     "dev-server": "npm run dev -w server",
     "dev-mobile": "npm run dev -w mobile-app",
     "build": "npm run build-server && npm run build-mobile && rm -rf public && cp -r mobile-app/dist public",
+    "build-render": "npm run build-server",
     "build-server": "npm run build -w server",
     "build-mobile": "npm run build -w mobile-app",
     "start": "npm run start-server",
