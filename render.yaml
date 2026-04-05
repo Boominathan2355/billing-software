@@ -3,7 +3,7 @@ services:
     name: billing-server
     env: node
     plan: free
-    buildCommand: npm install --include=dev && npm run build -w server
+    buildCommand: npm install --include=dev && npm run build-render
     startCommand: npm start -w server
     envVars:
       - key: NODE_ENV
