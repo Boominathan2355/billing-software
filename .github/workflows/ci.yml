@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, master, testing, feature/billing ]
+    branches: [ feature/billing ]
   pull_request:
-    branches: [ main, master, testing, feature/billing ]
+    branches: [ feature/billing ]
 
 jobs:
   build:
