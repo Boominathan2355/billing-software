@@ -1,5 +1,8 @@
 # 🚀 Billing Management System
 
+[![CI](https://github.com/Boominathan2355/billing-software/actions/workflows/ci.yml/badge.svg)](https://github.com/Boominathan2355/billing-software/actions/workflows/ci.yml)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FBoominathan2355%2Fbilling-software)
+
 A full-stack, enterprise-ready billing and inventory management software built with **Node.js**, **Express**, **TypeScript**, and **Vite**.
 
 ## 📁 Project Structure
