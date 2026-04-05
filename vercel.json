@@ -1,7 +1,15 @@
 {
+  "version": 2,
   "buildCommand": "npm run build-mobile",
   "outputDirectory": "mobile-app/dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "server/src/index.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

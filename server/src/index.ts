@@ -47,14 +47,22 @@ const seedAdmin = async () => {
   }
 };
 
+// Export the app for Vercel Serverless Functions
 export default app;
 
 const start = async () => {
-  await connectDB();
-  await seedAdmin();
-  if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-    app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+  try {
+    await connectDB();
+    await seedAdmin();
+    
+    // Only listen if not running as a Vercel Serverless Function
+    if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+      app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+    }
+  } catch (err) {
+    console.error('❌ Server startup failed:', err);
   }
 };
 
+// Initial connection for cold starts
 start();
