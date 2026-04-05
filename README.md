@@ -5,14 +5,14 @@ A full-stack, enterprise-ready billing and inventory management software built w
 ## 📁 Project Structure
 
 This project is a monorepo containing:
-- **`server/`**: The backend API built with Node.js & Express.
-- **`mobile-app/`**: The modern frontend dashboard built with Vite & React.
+- **`server/`**: Backend API (Express.js), hosted as **Vercel Serverless Functions**.
+- **`mobile-app/`**: Modern frontend dashboard (React + Vite), hosted on **Vercel**.
 
 ## 🛠 Tech Stack
 
 - **Backend**: Node.js, Express, TypeScript, MongoDB (Mongoose)
 - **Frontend**: React, Vite, TypeScript
-- **Deployment**: Render (Blueprint as Code)
+- **Deployment**: **Vercel** (Fullstack Deployment)
 - **CI/CD**: GitHub Actions
 
 ## 🚀 Getting Started
@@ -31,12 +31,11 @@ This project is a monorepo containing:
 
 ### Deployment
 
-This project uses **Render Blueprints** for automated infrastructure as code.
-- **Backend URL**: `https://billing-server-feature.onrender.com`
-- **Frontend URL**: `https://billing-client-feature.onrender.com`
+This project is fully hosted on **Vercel**.
+- **Frontend & API**: Automated deployments for the **`feature/billing`** branch.
 
 > [!IMPORTANT]
-> The project is currently configured to host the **`feature/billing`** branch exclusively.
+> Ensure you have configured your **Environment Variables** (`MONGO_URI`, `JWT_SECRET`) in the Vercel Dashboard for both the frontend and backend to communicate with the database.
 
 ## 📄 License
 Private Project - © 2026
