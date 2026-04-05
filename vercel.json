@@ -1,6 +1,11 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
+  "functions": {
+    "server/src/index.ts": {
+      "runtime": "vercel-node@latest"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
