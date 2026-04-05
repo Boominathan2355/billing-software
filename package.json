@@ -17,8 +17,9 @@
     "build": "npm run build-server && npm run build-mobile && rm -rf public && cp -r mobile-app/dist public",
     "build-server": "npm run build -w server",
     "build-mobile": "npm run build -w mobile-app",
+    "start": "npm run start-server",
     "start-server": "npm start -w server",
-    "install:all": "npm install && npm install-server && npm install-mobile"
+    "install:all": "npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

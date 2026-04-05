@@ -66,15 +66,15 @@ app.use('/api/dashboard', dashboardRoutes);
 // Export the app for Vercel Serverless Functions
 export default app;
 
-// Local development server logic
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+// Local and Production server logic (outside Vercel)
+if (!process.env.VERCEL) {
   const start = async () => {
     try {
       await connectDB();
       await seedAdmin();
-      app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+      app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
     } catch (err) {
-      console.error('❌ Local server startup failed:', err);
+      console.error('❌ Server startup failed:', err);
     }
   };
   start();

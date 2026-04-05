@@ -1,12 +1,17 @@
 {
   "version": 2,
+  "env": {
+    "FORCE_REDEPLOY": "2026-04-05T06:10:00Z"
+  },
+  "rootDirectory": "mobile-app",
+  "framework": "vite",
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.live https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.vercel.app; img-src 'self' data:; frame-ancestors 'self' https://*.vercel.app;"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.live https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.vercel.app https://*.onrender.com; img-src 'self' data:; frame-ancestors 'self' https://*.vercel.app;"
         },
         {
           "key": "Permissions-Policy",
@@ -23,20 +28,10 @@
       ]
     }
   ],
-  "buildCommand": "npm run build",
-  "functions": {
-    "server/src/index.ts": {
-      "runtime": "vercel-node@latest"
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "server/src/index.ts"
-    },
-    {
       "source": "/(.*)",
-      "destination": "/public/index.html"
+      "destination": "/index.html"
     }
   ]
 }

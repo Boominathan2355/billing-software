@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: billing-server
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build -w server
+    startCommand: npm start -w server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromConfig: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 5000
