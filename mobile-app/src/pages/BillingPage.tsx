@@ -4,6 +4,7 @@ import { billsApi, customersApi, productsApi, type BillPayload } from '../api/se
 import type { Customer, Product, BillItem } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
+import BillPreviewModal from '../components/BillPreviewModal';
 import { effectiveGSTRate, getQRImage } from '../utils/settings';
 
 export default function BillingPage() {
@@ -94,7 +95,7 @@ export default function BillingPage() {
 
       if (status === 'COMPLETED') {
         setPrintBillData(data);
-        setTimeout(() => window.print(), 100);
+        // Show preview modal instead of auto-printing
       }
 
       resetForm();
@@ -169,63 +170,13 @@ export default function BillingPage() {
 
   return (
     <div>
+      {/* ── Bill Preview Modal ────────────────────────────── */}
       {printBillData && (
-        <div className="printable-receipt" style={{ display: 'none' }}>
-          <div style={{ textAlign: 'center', marginBottom: 12 }}>
-            <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>INVOICE</h2>
-            <div style={{ fontSize: 12 }}>{new Date(printBillData.date).toLocaleString()}</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', marginTop: 4 }}>To: {printBillData.customerName}</div>
-          </div>
-
-          <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', marginBottom: 16 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #000' }}>
-                <th style={{ textAlign: 'left', padding: '4px 0' }}>Item</th>
-                <th style={{ textAlign: 'center', padding: '4px 0' }}>Qty</th>
-                <th style={{ textAlign: 'right', padding: '4px 0' }}>Amt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {printBillData.items.map((it: any, i: number) => (
-                <tr key={i} style={{ borderBottom: '1px dashed #ccc' }}>
-                  <td style={{ padding: '4px 0' }}>
-                    <div>{it.productName}</div>
-                    {it.taxAmount > 0 && <div style={{ fontSize: 10, color: '#555' }}>Inc. GST</div>}
-                  </td>
-                  <td style={{ textAlign: 'center', padding: '4px 0' }}>{it.qty}</td>
-                  <td style={{ textAlign: 'right', padding: '4px 0' }}>Rs. {(it.qty * it.price).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: '2px solid #000', paddingTop: 8, fontSize: 13 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Subtotal:</span>
-              <span>Rs. {printBillData.subTotal.toFixed(2)}</span>
-            </div>
-            {printBillData.taxAmount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>GST:</span>
-                <span>Rs. {printBillData.taxAmount.toFixed(2)}</span>
-              </div>
-            )}
-            {printBillData.discount?.amount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Discount:</span>
-                <span>- Rs. {printBillData.discount.amount.toFixed(2)}</span>
-              </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 'bold', marginTop: 4, paddingTop: 4, borderTop: '1px solid #000' }}>
-              <span>Total:</span>
-              <span>Rs. {printBillData.total.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: 24, fontSize: 12, fontStyle: 'italic' }}>
-            Thank you for your business!
-          </div>
-        </div>
+        <BillPreviewModal
+          bill={printBillData}
+          onClose={() => setPrintBillData(null)}
+          onNewBill={() => { setPrintBillData(null); resetForm(); }}
+        />
       )}
 
       <div className="page-content fade-up no-print">

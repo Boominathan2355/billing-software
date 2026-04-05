@@ -13,8 +13,9 @@ export interface Product {
   unitName: string;
   freeStock: number;
   taxRate?: number;
-  price?: number;         // optional — old records may be missing this
+  price?: number;
   purchasePrice?: number;
+  lowStockThreshold?: number; // warn when freeStock <= this value
 }
 
 export interface Transaction {

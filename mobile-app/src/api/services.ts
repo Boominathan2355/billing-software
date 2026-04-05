@@ -57,11 +57,13 @@ export type ProductPayload = {
 };
 
 export const productsApi = {
-  list:   ()             => api.get<Product[]>('/products').then(r => r.data),
-  create: (p: ProductPayload) => api.post<Product>('/products', p).then(r => r.data),
-  update: (id: string, p: Partial<ProductPayload>) =>
+  list:    ()                          => api.get<Product[]>('/products').then(r => r.data),
+  create:  (p: ProductPayload)         => api.post<Product>('/products', p).then(r => r.data),
+  update:  (id: string, p: Partial<ProductPayload>) =>
     api.put<Product>(`/products/${id}`, p).then(r => r.data),
-  delete: (id: string)   => api.delete(`/products/${id}`).then(r => r.data),
+  delete:  (id: string)                => api.delete(`/products/${id}`).then(r => r.data),
+  stockIn: (id: string, qty: number, purchasePrice?: number) =>
+    api.patch<Product>(`/products/${id}/stock`, { qty, purchasePrice }).then(r => r.data),
 };
 
 // ─── Customers ──────────────────────────────────────────────────────────────
