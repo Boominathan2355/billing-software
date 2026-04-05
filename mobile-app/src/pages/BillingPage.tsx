@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { LuPlus, LuTrash2, LuCircleCheck, LuCircleX, LuSave, LuFolderOpen, LuCoins, LuNotebook, LuQrCode } from 'react-icons/lu';
-import api from '../api/client';
+import { billsApi, customersApi, productsApi, type BillPayload } from '../api/services';
 import type { Customer, Product, BillItem } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
@@ -34,9 +34,13 @@ export default function BillingPage() {
   const [saved, setSaved]               = useState(false);
   const [printBillData, setPrintBillData] = useState<any>(null);
 
+  // Read settings safely once (localStorage may be restricted on first render)
+  const [settingGSTRate] = useState<number>(() => { try { return effectiveGSTRate(); } catch { return 0; } });
+  const [qrImage]        = useState<string | null>(() => { try { return getQRImage(); } catch { return null; } });
+
   useEffect(() => {
-    api.get('/customers').then(r => setCustomers(r.data));
-    api.get('/products').then(r => setProducts(r.data));
+    customersApi.list().then(r => setCustomers(r));
+    productsApi.list().then(r => setProducts(r));
   }, []);
 
   const addItem = () => {
@@ -55,7 +59,9 @@ export default function BillingPage() {
     setQty('');
   };
 
-  const gstRate = effectiveGSTRate();
+  // Read GST safely — localStorage may be restricted in some browser contexts
+  let gstRate = settingGSTRate;
+
   const subTotal = bill.reduce((s, i) => s + i.qty * (i.price ?? 0), 0);
   const totalTax = gstRate > 0 ? subTotal * gstRate / 100 : 0;
   const dVal = parseFloat(discountValue) || 0;
@@ -66,26 +72,23 @@ export default function BillingPage() {
     if (!bill.length) return;
     setSaving(true);
 
-    const payload: any = {
+    const payload: BillPayload = {
       customerId: selectedCustomer || null,
       paymentType,
       items: bill.map(i => ({ productId: i.productId, qty: i.qty, price: i.price ?? 0 })),
       gstRate: effectiveGSTRate(),
       status,
     };
+
     if (!selectedCustomer) {
-      if (customerName) payload.customerName = customerName;
+      if (customerName)  payload.customerName  = customerName;
       if (customerPhone) payload.customerPhone = customerPhone;
     }
-    if (dVal > 0) {
-      payload.discount = { type: discountType, value: dVal };
-    }
-    if (draftId) {
-      payload.draftId = draftId;
-    }
+    if (dVal > 0) payload.discount = { type: discountType, value: dVal };
+    if (draftId)  payload.draftId  = draftId;
 
     try {
-      const { data } = await api.post('/bills', payload);
+      const data = await billsApi.create(payload);
       setSaving(false);
       setSaved(true);
 
@@ -97,9 +100,7 @@ export default function BillingPage() {
       resetForm();
       setTimeout(() => setSaved(false), 2500);
     } catch (err: any) {
-      const errMsg = err.response?.data?.error || err.message;
-      alert('Failed to save bill: ' + errMsg);
-      console.error('Save bill error:', err.response?.data || err);
+      alert('Failed to save bill: ' + err.message);
       setSaving(false);
     }
   };
@@ -116,43 +117,51 @@ export default function BillingPage() {
   const cancelBill = async (id: string, isDraft = false) => {
     if (!confirm('Are you sure you want to cancel this bill?')) return;
     if (isDraft) {
-      await api.delete(`/bills/${id}`);
+      await billsApi.deleteDraft(id);
       loadDrafts();
     } else {
-      await api.post(`/bills/${id}/cancel`);
+      await billsApi.cancel(id);
       loadHistory();
     }
   };
 
   const loadHistory = async () => {
-    const r = await api.get('/bills?status=COMPLETED');
-    setHistory(r.data);
+    const data = await billsApi.listCompleted();
+    setHistory(data);
     setShowHistory(true);
   };
 
   const loadDrafts = async () => {
-    const r = await api.get('/bills?status=DRAFT');
-    setDrafts(r.data);
+    const data = await billsApi.listDrafts();
+    setDrafts(data);
     setShowDrafts(true);
   };
 
   const resumeDraft = (d: any) => {
-    setSelectedCustomer(d.customerId?._id || '');
+    setSelectedCustomer(d.customerId?._id || d.customerId || '');
     setCustomerName(d.customerName || '');
     setCustomerPhone(d.customerPhone || '');
-    setPaymentType(d.paymentType);
+    // paymentType guard: ONLINE is a new value; old drafts may have CASH/UDHAAR
+    const pt = d.paymentType === 'CASH' || d.paymentType === 'UDHAAR' || d.paymentType === 'ONLINE'
+      ? d.paymentType : 'CASH';
+    setPaymentType(pt);
     if (d.discount) {
-      setDiscountType(d.discount.type);
-      setDiscountValue(d.discount.value.toString());
+      setDiscountType(d.discount.type ?? 'FLAT');
+      setDiscountValue(String(d.discount.value ?? 0));
     }
     setDraftId(d._id);
-    setBill(d.items.map((i: any) => ({
-      productId: i.productId,
-      productName: i.productName,
-      qty: i.qty,
-      price: i.price,
-      taxAmount: i.taxAmount,
-    })));
+    setBill(d.items.map((i: any) => {
+      // populated productId can be an object {_id, name} or a raw string ID
+      const pid  = typeof i.productId === 'object' ? i.productId?._id  : i.productId;
+      const pname = i.productName || (typeof i.productId === 'object' ? i.productId?.name : '') || 'Unknown';
+      return {
+        productId:   pid   ?? '',
+        productName: pname,
+        qty:         i.qty   ?? 0,
+        price:       i.price ?? 0,
+        taxAmount:   i.taxAmount ?? 0,
+      };
+    }));
     setShowDrafts(false);
   };
 
@@ -365,19 +374,18 @@ export default function BillingPage() {
             </div>
 
             {/* QR code panel for Online payment */}
-            {paymentType === 'ONLINE' && (() => {
-              const qr = getQRImage();
-              return qr ? (
+            {paymentType === 'ONLINE' && (
+              qrImage ? (
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, fontWeight: 600 }}>Scan to Pay</div>
-                  <img src={qr} alt="Payment QR" style={{ width: 160, height: 160, objectFit: 'contain', borderRadius: 14, border: '1px solid var(--border)', background: '#fff', padding: 6 }} />
+                  <img src={qrImage} alt="Payment QR" style={{ width: 160, height: 160, objectFit: 'contain', borderRadius: 14, border: '1px solid var(--border)', background: '#fff', padding: 6 }} />
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '14px 0', marginBottom: 16, color: 'var(--text-muted)', fontSize: 13 }}>
                   No QR set — upload one in Settings
                 </div>
-              );
-            })()}
+              )
+            )}
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-ghost" onClick={() => saveBill('DRAFT')} disabled={saving} style={{ flex: 1, fontSize: 16 }}>

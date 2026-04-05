@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { DashboardMetrics } from '../types';
-import api from '../api/client';
+import { dashboardApi } from '../api/services';
 import BottomNav from '../components/BottomNav';
 import { SkeletonDashboard } from '../components/Skeleton';
 import { LuActivity, LuTriangleAlert, LuTrendingUp, LuIndianRupee, LuClock } from 'react-icons/lu';
@@ -15,7 +15,7 @@ export default function DashboardPage() {
     const fetchMetrics = async () => {
       setLoading(true);
       try {
-        const { data } = await api.get<DashboardMetrics>('/dashboard');
+        const data = await dashboardApi.get();
         if (active) setMetrics(data);
       } catch (err) {
         console.error('Failed to fetch dashboard', err);

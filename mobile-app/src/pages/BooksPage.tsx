@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { LuPlus, LuTrendingUp, LuTrendingDown } from 'react-icons/lu';
-import api from '../api/client';
+import { transactionsApi } from '../api/services';
 import type { Transaction } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
@@ -20,13 +20,13 @@ export default function BooksPage() {
   const [details, setDetails]   = useState('');
 
   const load = () =>
-    api.get('/transactions').then(r => { setTransactions(r.data); setLoading(false); });
+    transactionsApi.list().then(data => { setTransactions(data); setLoading(false); });
 
   useEffect(() => { load(); }, []);
 
   const addTxn = async (e: FormEvent) => {
     e.preventDefault();
-    await api.post('/transactions', { type: txnType, category, amount: parseFloat(amount), details });
+    await transactionsApi.create({ type: txnType, category, amount: parseFloat(amount), details });
     setAmount(''); setDetails('');
     setShowAdd(false);
     load();

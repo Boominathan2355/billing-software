@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { LuArrowLeft, LuPencil, LuTrash2, LuMail, LuMapPin } from 'react-icons/lu';
-import api from '../api/client';
+import { customersApi } from '../api/services';
 import type { Customer, Transaction } from '../types';
 import Modal from '../components/Modal';
 import { SkeletonCustomerDetail } from '../components/Skeleton';
@@ -24,9 +24,9 @@ export default function CustomerDetailPage() {
   const [editAddress, setEditAddress]   = useState('');
 
   const load = () =>
-    api.get(`/customers/${id}`).then(r => {
-      setCustomer(r.data.customer);
-      setHistory(r.data.history);
+    customersApi.get(id!).then(data => {
+      setCustomer(data.customer);
+      setHistory(data.history);
       setLoading(false);
     });
 
@@ -35,7 +35,7 @@ export default function CustomerDetailPage() {
   const adjust = async (type: 'receive' | 'give') => {
     if (!amount || !customer) return;
     setSaving(true);
-    await api.post(`/customers/${id}/adjust`, { amount: parseFloat(amount), type });
+    await customersApi.adjust(id!, parseFloat(amount), type === 'receive' ? 'IN' : 'OUT');
     setAmount('');
     setSaving(false);
     load();
@@ -44,7 +44,7 @@ export default function CustomerDetailPage() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await api.put(`/customers/${id}`, {
+    await customersApi.update(id!, {
       name: editName, phone: editPhone,
       email: editEmail || undefined,
       address: editAddress || undefined,
@@ -60,7 +60,7 @@ export default function CustomerDetailPage() {
       return;
     }
     if (!confirm('Are you sure you want to delete this customer?')) return;
-    await api.delete(`/customers/${id}`);
+    await customersApi.delete(id!);
     navigate('/customers');
   };
 

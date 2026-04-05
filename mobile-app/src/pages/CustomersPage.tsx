@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LuPlus, LuChevronRight, LuMail, LuMapPin } from 'react-icons/lu';
-import api from '../api/client';
 import type { Customer } from '../types';
 import BottomNav from '../components/BottomNav';
 import Modal from '../components/Modal';
 import { SkeletonCardList } from '../components/Skeleton';
+import { customersApi } from '../api/services';
 
 export default function CustomersPage() {
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export default function CustomersPage() {
   const [error, setError]     = useState('');
 
   const load = () =>
-    api.get('/customers').then(r => { setCustomers(r.data); setLoading(false); });
+    customersApi.list().then(data => { setCustomers(data); setLoading(false); });
 
   useEffect(() => { load(); }, []);
 
@@ -29,7 +29,7 @@ export default function CustomersPage() {
     e.preventDefault();
     setError('');
     try {
-      await api.post('/customers', { name, phone, email: email || undefined, address: address || undefined });
+      await customersApi.create({ name, phone, email: email || undefined, address: address || undefined });
       setName(''); setPhone(''); setEmail(''); setAddress('');
       setShowAdd(false);
       load();

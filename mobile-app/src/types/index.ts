@@ -12,9 +12,9 @@ export interface Product {
   name: string;
   unitName: string;
   freeStock: number;
-  taxRate: number;
-  price: number;
-  purchasePrice: number;
+  taxRate?: number;
+  price?: number;         // optional — old records may be missing this
+  purchasePrice?: number;
 }
 
 export interface Transaction {
@@ -40,7 +40,7 @@ export interface Bill {
   customerId?: Customer;
   customerName?: string;
   customerPhone?: string;
-  paymentType: 'CASH' | 'UDHAAR';
+  paymentType: 'CASH' | 'UDHAAR' | 'ONLINE';
   items: BillItem[];
   subTotal: number;
   taxAmount: number;
